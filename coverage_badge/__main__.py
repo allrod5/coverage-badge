@@ -14,8 +14,9 @@ except ImportError:
     coverage = None
 
 
-__version__ = '1.0.1'
+__version__ = '1.1.0'
 
+DEFAULT_LABEL = 'coverage'
 
 DEFAULT_COLOR = '#a4a61d'
 COLORS = {
@@ -86,14 +87,27 @@ def get_color(total):
             return COLORS[color]
 
 
-def get_badge(total, color=DEFAULT_COLOR):
+def get_badge(total, color=DEFAULT_COLOR, label=DEFAULT_LABEL):
     """
     Read the SVG template from the package, update total, return SVG as a
     string.
     """
+    divider = 7*(len(label) + 1)
+    width = 36 + divider
+    label_center = divider / 2
+    total_center = divider + 17
     template_path = os.path.join('templates', 'flat.svg')
     template = pkg_resources.resource_string(__name__, template_path).decode('utf8')
-    return template.replace('{{ total }}', total).replace('{{ color }}', color)
+    return (
+        template
+        .replace('{{ total }}', total)
+        .replace('{{ color }}', color)
+        .replace('{{ label }}', label)
+        .replace('{{ divider }}', divider)
+        .replace('{{ width }}', width)
+        .replace('{{ label_center }}', label_center)
+        .replace('{{ total_center }}', total_center)
+    )
 
 
 def parse_args(argv=None):
@@ -103,6 +117,8 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-o', dest='filepath',
             help='Save the file to the specified path.')
+    parser.add_argument('-l', dest='label',
+            help='Define the badge label text.')
     parser.add_argument('-p', dest='plain_color', action='store_true',
             help='Plain color mode. Standard green badge.')
     parser.add_argument('-f', dest='force', action='store_true',
@@ -171,7 +187,8 @@ def main(argv=None):
         sys.exit(1)
 
     color = DEFAULT_COLOR if args.plain_color else get_color(total)
-    badge = get_badge(total, color)
+    label = label if args.label else DEFAULT_LABEL
+    badge = get_badge(total, color, label)
 
     # Show or save output
     if args.filepath:
